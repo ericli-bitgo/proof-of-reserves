@@ -4,6 +4,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend"
 	"github.com/consensys/gnark/test"
+	"math/big"
 	"testing"
 )
 
@@ -34,15 +35,14 @@ func TestCircuitDoesNotAcceptNegativeAccounts(t *testing.T) {
 	assert := test.NewAssert(t)
 
 	var c Circuit
-	goAccounts, goAssetSum, _, _ := GenerateTestData(count)
+	goAccounts, _, _, _ := GenerateTestData(count)
+	goAccounts[0].Balance.Bitcoin = *big.NewInt(-1)
 	c.Accounts = ConvertGoAccountsToAccounts(goAccounts)
-	c.Accounts[0].Balance.Bitcoin = -1
-	// fix the balance
-	goAssetSum.Bitcoin -= 1 + goAccounts[0].Balance.Bitcoin
+	goAssetSum := SumGoAccountBalancesIncludingNegatives(goAccounts)
 	c.AssetSum = ConvertGoBalanceToBalance(goAssetSum)
-	merkleRoot := "21875610370320048097190280594176833536697223607785798369247081808956128461944"
+	merkleRoot := goComputeMerkleRootFromAccounts(goAccounts)
 	c.MerkleRoot = merkleRoot
-	c.MerkleRootWithAssetSumHash = goComputeMiMCHashForAccount(GoAccount{[]byte(merkleRoot), goAssetSum})
+	c.MerkleRootWithAssetSumHash = goComputeMiMCHashForAccount(GoAccount{merkleRoot, goAssetSum})
 
 	assert.ProverSucceeded(baseCircuit, &c, test.WithCurves(ecc.BN254), test.WithBackends(backend.GROTH16))
 }

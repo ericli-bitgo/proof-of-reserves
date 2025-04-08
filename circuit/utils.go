@@ -20,14 +20,21 @@ type GoAccount struct {
 
 func goConvertBalanceToBytes(balance GoBalance) (value []byte) {
 	value = make([]byte, 0)
-	value = append(value, padToModBytes(balance.Bitcoin.Bytes())...)
-	value = append(value, padToModBytes(balance.Ethereum.Bytes())...)
+	value = append(value, padToModBytes(balance.Bitcoin.Bytes(), balance.Bitcoin.Sign() == -1)...)
+	value = append(value, padToModBytes(balance.Ethereum.Bytes(), balance.Ethereum.Sign() == -1)...)
 
 	return value
 }
 
-func padToModBytes(value []byte) (paddedValue []byte) {
+func padToModBytes(value []byte, isNegative bool) (paddedValue []byte) {
 	paddedValue = make([]byte, ModBytes-len(value))
+	// sign extension
+	if isNegative {
+		for i := range paddedValue {
+			paddedValue[i] = 0xFF
+		}
+		paddedValue[0] = 0x0F // this is 254 bits not 256
+	}
 	paddedValue = append(paddedValue, value...)
 	return paddedValue
 }
@@ -55,7 +62,7 @@ func goComputeMerkleRootFromAccounts(accounts []GoAccount) (rootHash []byte) {
 		if i < len(accounts) {
 			nodes[i] = goComputeMiMCHashForAccount(accounts[i])
 		} else {
-			nodes[i] = padToModBytes([]byte{})
+			nodes[i] = padToModBytes([]byte{}, false)
 		}
 	}
 	for i := TreeDepth - 1; i >= 0; i-- {
@@ -77,8 +84,8 @@ func goComputeMerkleRootFromAccounts(accounts []GoAccount) (rootHash []byte) {
 
 func ConvertGoBalanceToBalance(goBalance GoBalance) Balance {
 	return Balance{
-		Bitcoin:  goBalance.Bitcoin.Bytes(),
-		Ethereum: goBalance.Ethereum.Bytes(),
+		Bitcoin:  padToModBytes(goBalance.Bitcoin.Bytes(), goBalance.Bitcoin.Sign() == -1),
+		Ethereum: padToModBytes(goBalance.Ethereum.Bytes(), goBalance.Ethereum.Sign() == -1),
 	}
 }
 
@@ -97,9 +104,27 @@ func ConvertGoAccountsToAccounts(goAccounts []GoAccount) (accounts []Account) {
 	return accounts
 }
 
+// strictly for testing
+func SumGoAccountBalancesIncludingNegatives(accounts []GoAccount) GoBalance {
+	assetSum := GoBalance{Bitcoin: *big.NewInt(0), Ethereum: *big.NewInt(0)}
+	for _, account := range accounts {
+		b := make([]byte, 0)
+		b = append(b, padToModBytes(account.Balance.Bitcoin.Bytes(), account.Balance.Bitcoin.Sign() == -1)...)
+		assetSum.Bitcoin.Add(&assetSum.Bitcoin, new(big.Int).SetBytes(b))
+
+		b = make([]byte, 0)
+		b = append(b, padToModBytes(account.Balance.Ethereum.Bytes(), account.Balance.Ethereum.Sign() == -1)...)
+		assetSum.Ethereum.Add(&assetSum.Ethereum, new(big.Int).SetBytes(b))
+	}
+	return assetSum
+}
+
 func SumGoAccountBalances(accounts []GoAccount) GoBalance {
 	assetSum := GoBalance{Bitcoin: *big.NewInt(0), Ethereum: *big.NewInt(0)}
 	for _, account := range accounts {
+		if account.Balance.Bitcoin.Sign() == -1 || account.Balance.Ethereum.Sign() == -1 {
+			panic("use SumGoAccountBalancesIncludingNegatives for negative balances")
+		}
 		assetSum.Bitcoin.Add(&assetSum.Bitcoin, &account.Balance.Bitcoin)
 		assetSum.Ethereum.Add(&assetSum.Ethereum, &account.Balance.Ethereum)
 	}
