@@ -2,7 +2,6 @@ package main
 
 import (
 	"bitgo.com/proof_of_reserves/circuit"
-	"bitgo.com/proof_of_reserves/utils"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
@@ -22,11 +21,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	goAccounts, assetSum, merkleRoot, merkleRootWithAssetSumHash := utils.GenerateTestData(count)
+	goAccounts, assetSum, merkleRoot, merkleRootWithAssetSumHash := circuit.GenerateTestData(count)
 	var witnessInput circuit.Circuit
-	witnessInput.Accounts = utils.ConvertGoAccountsToAccounts(goAccounts)
+	witnessInput.Accounts = circuit.ConvertGoAccountsToAccounts(goAccounts)
 	witnessInput.MerkleRoot = merkleRoot
-	witnessInput.AssetSum = utils.ConvertGoBalanceToBalance(assetSum)
+	witnessInput.AssetSum = circuit.ConvertGoBalanceToBalance(assetSum)
 	witnessInput.MerkleRootWithAssetSumHash = merkleRootWithAssetSumHash
 	witness, err := frontend.NewWitness(&witnessInput, ecc.BN254.ScalarField())
 	if err != nil {

@@ -1,7 +1,6 @@
-package utils
+package circuit
 
 import (
-	"bitgo.com/proof_of_reserves/circuit"
 	"github.com/consensys/gnark-crypto/ecc"
 	mimcCrypto "github.com/consensys/gnark-crypto/ecc/bn254/fr/mimc"
 	"math/big"
@@ -10,8 +9,8 @@ import (
 var ModBytes = len(ecc.BN254.ScalarField().Bytes())
 
 type GoBalance struct {
-	Bitcoin  uint64
-	Ethereum uint64
+	Bitcoin  big.Int
+	Ethereum big.Int
 }
 
 type GoAccount struct {
@@ -21,11 +20,8 @@ type GoAccount struct {
 
 func goConvertBalanceToBytes(balance GoBalance) (value []byte) {
 	value = make([]byte, 0)
-	b := new(big.Int).SetUint64(balance.Bitcoin).Bytes()
-	value = append(value, padToModBytes(b)...)
-
-	b = new(big.Int).SetUint64(balance.Ethereum).Bytes()
-	value = append(value, padToModBytes(b)...)
+	value = append(value, padToModBytes(balance.Bitcoin.Bytes())...)
+	value = append(value, padToModBytes(balance.Ethereum.Bytes())...)
 
 	return value
 }
@@ -54,16 +50,16 @@ func goComputeMiMCHashForAccount(account GoAccount) []byte {
 
 func goComputeMerkleRootFromAccounts(accounts []GoAccount) (rootHash []byte) {
 	hasher := mimcCrypto.NewMiMC()
-	nodes := make([][]byte, circuit.PowOfTwo(circuit.TreeDepth))
-	for i := 0; i < circuit.PowOfTwo(circuit.TreeDepth); i++ {
+	nodes := make([][]byte, PowOfTwo(TreeDepth))
+	for i := 0; i < PowOfTwo(TreeDepth); i++ {
 		if i < len(accounts) {
 			nodes[i] = goComputeMiMCHashForAccount(accounts[i])
 		} else {
 			nodes[i] = padToModBytes([]byte{})
 		}
 	}
-	for i := circuit.TreeDepth - 1; i >= 0; i-- {
-		for j := 0; j < circuit.PowOfTwo(i); j++ {
+	for i := TreeDepth - 1; i >= 0; i-- {
+		for j := 0; j < PowOfTwo(i); j++ {
 			hasher.Reset()
 			_, err := hasher.Write(nodes[j*2])
 			if err != nil {
@@ -79,36 +75,44 @@ func goComputeMerkleRootFromAccounts(accounts []GoAccount) (rootHash []byte) {
 	return nodes[0]
 }
 
-func ConvertGoBalanceToBalance(goBalance GoBalance) circuit.Balance {
-	return circuit.Balance{
-		Bitcoin:  new(big.Int).SetUint64(goBalance.Bitcoin),
-		Ethereum: new(big.Int).SetUint64(goBalance.Ethereum),
+func ConvertGoBalanceToBalance(goBalance GoBalance) Balance {
+	return Balance{
+		Bitcoin:  goBalance.Bitcoin.Bytes(),
+		Ethereum: goBalance.Ethereum.Bytes(),
 	}
 }
 
-func convertGoAccountToAccount(goAccount GoAccount) circuit.Account {
-	return circuit.Account{
+func convertGoAccountToAccount(goAccount GoAccount) Account {
+	return Account{
 		UserId:  new(big.Int).SetBytes(goAccount.UserId),
 		Balance: ConvertGoBalanceToBalance(goAccount.Balance),
 	}
 }
 
-func ConvertGoAccountsToAccounts(goAccounts []GoAccount) (accounts []circuit.Account) {
-	accounts = make([]circuit.Account, len(goAccounts))
+func ConvertGoAccountsToAccounts(goAccounts []GoAccount) (accounts []Account) {
+	accounts = make([]Account, len(goAccounts))
 	for i, goAccount := range goAccounts {
 		accounts[i] = convertGoAccountToAccount(goAccount)
 	}
 	return accounts
 }
 
-func GenerateTestData(count int) (accounts []GoAccount, assetSum GoBalance, merkleRoot []byte, merkleRootWithAssetSumHash []byte) {
-	assetSum = GoBalance{Bitcoin: 0, Ethereum: 0}
-	for i := 0; i < count; i++ {
-		btcCount, ethCount := uint64(i+45*i+39), uint64(i*2+i+1001)
-		accounts = append(accounts, GoAccount{UserId: []byte("foo"), Balance: GoBalance{Bitcoin: btcCount, Ethereum: ethCount}})
-		assetSum = GoBalance{Bitcoin: assetSum.Bitcoin + btcCount, Ethereum: assetSum.Ethereum + ethCount}
+func SumGoAccountBalances(accounts []GoAccount) GoBalance {
+	assetSum := GoBalance{Bitcoin: *big.NewInt(0), Ethereum: *big.NewInt(0)}
+	for _, account := range accounts {
+		assetSum.Bitcoin.Add(&assetSum.Bitcoin, &account.Balance.Bitcoin)
+		assetSum.Ethereum.Add(&assetSum.Ethereum, &account.Balance.Ethereum)
 	}
+	return assetSum
+}
+
+func GenerateTestData(count int) (accounts []GoAccount, assetSum GoBalance, merkleRoot []byte, merkleRootWithAssetSumHash []byte) {
+	for i := 0; i < count; i++ {
+		btcCount, ethCount := int64(i+45*i+39), int64(i*2+i+1001)
+		accounts = append(accounts, GoAccount{UserId: []byte("foo"), Balance: GoBalance{Bitcoin: *big.NewInt(btcCount), Ethereum: *big.NewInt(ethCount)}})
+	}
+	goAccountBalanceSum := SumGoAccountBalances(accounts)
 	merkleRoot = goComputeMerkleRootFromAccounts(accounts)
-	merkleRootWithAssetSumHash = goComputeMiMCHashForAccount(GoAccount{UserId: merkleRoot, Balance: assetSum})
-	return accounts, assetSum, merkleRoot, merkleRootWithAssetSumHash
+	merkleRootWithAssetSumHash = goComputeMiMCHashForAccount(GoAccount{UserId: merkleRoot, Balance: goAccountBalanceSum})
+	return accounts, goAccountBalanceSum, merkleRoot, merkleRootWithAssetSumHash
 }
