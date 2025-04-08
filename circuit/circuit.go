@@ -3,6 +3,7 @@ package circuit
 import (
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/std/hash/mimc"
+	"github.com/consensys/gnark/std/rangecheck"
 )
 
 const TreeDepth = 10
@@ -33,10 +34,12 @@ func PowOfTwo(n int) (result int) {
 	return result
 }
 
-func assertBalanceNonNegative(api frontend.API, balances Balance) {
+func assertBalanceNonNegativeAndNonOverflow(api frontend.API, balances Balance) {
+	ranger := rangecheck.New(api)
+
 	// TODO: don't manually enumerate
-	api.AssertIsLessOrEqual(0, balances.Bitcoin)
-	api.AssertIsLessOrEqual(0, balances.Ethereum)
+	ranger.Check(balances.Bitcoin, 64)
+	ranger.Check(balances.Ethereum, 64)
 }
 
 func addBalance(api frontend.API, a, b Balance) Balance {
@@ -112,7 +115,7 @@ func (circuit *Circuit) Define(api frontend.API) error {
 	}
 	for i := 0; i < len(circuit.Accounts); i++ {
 		account := circuit.Accounts[i]
-		assertBalanceNonNegative(api, account.Balance)
+		assertBalanceNonNegativeAndNonOverflow(api, account.Balance)
 		runningBalance = addBalance(api, runningBalance, account.Balance)
 	}
 	assertBalancesAreEqual(api, runningBalance, circuit.AssetSum)

@@ -44,5 +44,5 @@ func TestCircuitDoesNotAcceptNegativeAccounts(t *testing.T) {
 	c.MerkleRoot = merkleRoot
 	c.MerkleRootWithAssetSumHash = goComputeMiMCHashForAccount(GoAccount{merkleRoot, goAssetSum})
 
-	assert.ProverSucceeded(baseCircuit, &c, test.WithCurves(ecc.BN254), test.WithBackends(backend.GROTH16))
+	assert.ProverFailed(baseCircuit, &c, test.WithCurves(ecc.BN254), test.WithBackends(backend.GROTH16))
 }
