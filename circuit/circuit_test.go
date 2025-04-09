@@ -40,9 +40,9 @@ func TestCircuitDoesNotAcceptNegativeAccounts(t *testing.T) {
 	c.Accounts = ConvertGoAccountsToAccounts(goAccounts)
 	goAssetSum := SumGoAccountBalancesIncludingNegatives(goAccounts)
 	c.AssetSum = ConvertGoBalanceToBalance(goAssetSum)
-	merkleRoot := goComputeMerkleRootFromAccounts(goAccounts)
+	merkleRoot := GoComputeMerkleRootFromAccounts(goAccounts)
 	c.MerkleRoot = merkleRoot
-	c.MerkleRootWithAssetSumHash = goComputeMiMCHashForAccount(GoAccount{merkleRoot, goAssetSum})
+	c.MerkleRootWithAssetSumHash = GoComputeMiMCHashForAccount(GoAccount{merkleRoot, goAssetSum})
 
 	assert.ProverFailed(baseCircuit, &c, test.WithCurves(ecc.BN254), test.WithBackends(backend.GROTH16))
 }
@@ -60,9 +60,9 @@ func TestCircuitDoesNotAcceptAccountsWithOverflow(t *testing.T) {
 	c.Accounts = ConvertGoAccountsToAccounts(goAccounts)
 	goAssetSum := SumGoAccountBalancesIncludingNegatives(goAccounts)
 	c.AssetSum = ConvertGoBalanceToBalance(goAssetSum)
-	merkleRoot := goComputeMerkleRootFromAccounts(goAccounts)
+	merkleRoot := GoComputeMerkleRootFromAccounts(goAccounts)
 	c.MerkleRoot = merkleRoot
-	c.MerkleRootWithAssetSumHash = goComputeMiMCHashForAccount(GoAccount{merkleRoot, goAssetSum})
+	c.MerkleRootWithAssetSumHash = GoComputeMiMCHashForAccount(GoAccount{merkleRoot, goAssetSum})
 
 	assert.ProverFailed(baseCircuit, &c, test.WithCurves(ecc.BN254), test.WithBackends(backend.GROTH16))
 }
