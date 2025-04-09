@@ -40,13 +40,24 @@ func generateProof(elements ProofElements) CompletedProof {
 	}
 
 	var completedProof CompletedProof
-	completedProof.Proof = proof
-	completedProof.VK = vk
+	b1 := bytes.Buffer{}
+	_, err = proof.WriteTo(&b1)
+	if err != nil {
+		panic(err)
+	}
+	completedProof.Proof = b1.String()
+	b2 := bytes.Buffer{}
+	_, err = vk.WriteTo(&b2)
+	if err != nil {
+		panic(err)
+	}
+	completedProof.VK = b2.String()
 	completedProof.AccountLeaves = computeAccountLeavesFromAccounts(elements.Accounts)
 	completedProof.MerkleRoot = circuit.GoComputeMerkleRootFromAccounts(elements.Accounts)
 	if elements.AssetSum == nil {
 		panic("AssetSum is nil")
 	}
+	completedProof.AssetSum = elements.AssetSum
 	completedProof.MerkleRootWithAssetSumHash = circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: completedProof.MerkleRoot, Balance: *elements.AssetSum})
 	return completedProof
 }

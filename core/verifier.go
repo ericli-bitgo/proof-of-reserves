@@ -14,7 +14,19 @@ func verifyProof(proof CompletedProof) bool {
 	publicCircuit.MerkleRoot = proof.MerkleRoot
 	publicCircuit.MerkleRootWithAssetSumHash = proof.MerkleRootWithAssetSumHash
 	publicWitness, err := frontend.NewWitness(&publicCircuit, ecc.BN254.ScalarField(), frontend.PublicOnly())
-	err = groth16.Verify(proof.Proof, proof.VK, publicWitness)
+	grothProof := groth16.NewProof(ecc.BN254)
+	b1 := bytes.NewBufferString(proof.Proof)
+	_, err = grothProof.ReadFrom(b1)
+	if err != nil {
+		panic(err)
+	}
+	grothVK := groth16.NewVerifyingKey(ecc.BN254)
+	b2 := bytes.NewBufferString(proof.VK)
+	_, err = grothVK.ReadFrom(b2)
+	if err != nil {
+		panic(err)
+	}
+	err = groth16.Verify(grothProof, grothVK, publicWitness)
 	if err != nil {
 		panic(err)
 	}
@@ -40,10 +52,13 @@ func verifyProofs(bottomLayerProofs []CompletedProof, topLayerProof CompletedPro
 	// next, verify that the bottom layer proofs lead to the top layer proof
 	bottomLayerHashes := make([]circuit.Hash, len(bottomLayerProofs))
 	for i, proof := range bottomLayerProofs {
-		bottomLayerHashes[i] = proof.MerkleRoot
+		bottomLayerHashes[i] = proof.MerkleRootWithAssetSumHash
 	}
 	if !bytes.Equal(circuit.GoComputeMerkleRootFromHashes(bottomLayerHashes), topLayerProof.MerkleRoot) {
 		panic("top layer proof does not match bottom layer proofs")
+	}
+	if topLayerProof.AssetSum == nil {
+		panic("top layer proof asset sum is nil")
 	}
 	if !bytes.Equal(circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: topLayerProof.MerkleRoot, Balance: *topLayerProof.AssetSum}), topLayerProof.MerkleRootWithAssetSumHash) {
 		panic("top layer hash with asset sum does not match published asset sum")
@@ -61,9 +76,9 @@ func verifyInclusionInProof(accountHash circuit.Hash, bottomLayerProofs []Comple
 	panic("account not found in any proof")
 }
 
-func Verify(batchCount int, account circuit.GoAccount) {
-	bottomLevelProofs := getDataFromFiles[CompletedProof](batchCount, "out/public/test_proof_")
-	topLevelProof := getDataFromFiles[CompletedProof](1, "out/public/test_top_level_proof_")[0]
+func Verify(batchCount int, account circuit.GoAccount, bottomLevelProofs []CompletedProof, topLevelProof CompletedProof) {
+	//bottomLevelProofs := getDataFromFiles[CompletedProof](batchCount, "out/public/test_proof_")
+	//topLevelProof := getDataFromFiles[CompletedProof](1, "out/public/test_top_level_proof_")[0]
 	verifyProofs(bottomLevelProofs, topLevelProof)
 
 	accountHash := circuit.GoComputeMiMCHashForAccount(account)

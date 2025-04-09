@@ -3,7 +3,6 @@ package main
 import (
 	"bitgo.com/proof_of_reserves/circuit"
 	"encoding/json"
-	"github.com/consensys/gnark/backend/groth16"
 	"os"
 	"strconv"
 )
@@ -51,8 +50,8 @@ type ProofElements struct {
 type AccountLeaf = []byte
 
 type CompletedProof struct {
-	Proof                      groth16.Proof
-	VK                         groth16.VerifyingKey
+	Proof                      string
+	VK                         string
 	AccountLeaves              []AccountLeaf
 	MerkleRoot                 []byte
 	MerkleRootWithAssetSumHash []byte
