@@ -43,7 +43,7 @@ func readJson(filePath string, data interface{}) error {
 
 type ProofElements struct {
 	Accounts                   []circuit.GoAccount
-	AssetSum                   circuit.GoBalance
+	AssetSum                   *circuit.GoBalance
 	MerkleRoot                 []byte
 	MerkleRootWithAssetSumHash []byte
 }
@@ -63,7 +63,9 @@ func writeTestDataToFile(batchCount int, countPerBatch int) {
 	for i := 0; i < batchCount; i++ {
 		filePath := "out/secret/test_data_" + strconv.Itoa(i) + ".json"
 		var secretData ProofElements
-		secretData.Accounts, secretData.AssetSum, secretData.MerkleRoot, secretData.MerkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch)
+		var assetSum circuit.GoBalance
+		secretData.Accounts, assetSum, secretData.MerkleRoot, secretData.MerkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch)
+		secretData.AssetSum = &assetSum
 		err := writeJson(filePath, secretData)
 		if err != nil {
 			panic(err)

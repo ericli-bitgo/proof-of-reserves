@@ -25,7 +25,10 @@ func generateProof(elements ProofElements) CompletedProof {
 	var witnessInput circuit.Circuit
 	witnessInput.Accounts = circuit.ConvertGoAccountsToAccounts(elements.Accounts)
 	witnessInput.MerkleRoot = elements.MerkleRoot
-	witnessInput.AssetSum = circuit.ConvertGoBalanceToBalance(elements.AssetSum)
+	if elements.AssetSum == nil {
+		panic("AssetSum is nil")
+	}
+	witnessInput.AssetSum = circuit.ConvertGoBalanceToBalance(*elements.AssetSum)
 	witnessInput.MerkleRootWithAssetSumHash = elements.MerkleRootWithAssetSumHash
 	witness, err := frontend.NewWitness(&witnessInput, ecc.BN254.ScalarField())
 	if err != nil {
@@ -41,7 +44,10 @@ func generateProof(elements ProofElements) CompletedProof {
 	completedProof.VK = vk
 	completedProof.AccountLeaves = computeAccountLeavesFromAccounts(elements.Accounts)
 	completedProof.MerkleRoot = circuit.GoComputeMerkleRootFromAccounts(elements.Accounts)
-	completedProof.MerkleRootWithAssetSumHash = circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: completedProof.MerkleRoot, Balance: elements.AssetSum})
+	if elements.AssetSum == nil {
+		panic("AssetSum is nil")
+	}
+	completedProof.MerkleRootWithAssetSumHash = circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: completedProof.MerkleRoot, Balance: *elements.AssetSum})
 	return completedProof
 }
 
@@ -74,14 +80,18 @@ func Prove(batchCount int) (bottomLevelProofs []CompletedProof, topLevelProof Co
 	topLevelProofElements.Accounts = make([]circuit.GoAccount, len(proofElements))
 
 	for i := 0; i < len(proofElements); i++ {
-		topLevelProofElements.Accounts[i] = circuit.GoAccount{UserId: proofElements[i].MerkleRoot, Balance: proofElements[i].AssetSum}
+		if proofElements[i].AssetSum == nil {
+			panic("AssetSum is nil")
+		}
+		topLevelProofElements.Accounts[i] = circuit.GoAccount{UserId: proofElements[i].MerkleRoot, Balance: *proofElements[i].AssetSum}
 		if !bytes.Equal(proofElements[i].MerkleRootWithAssetSumHash, circuit.GoComputeMiMCHashForAccount(topLevelProofElements.Accounts[i])) {
 			panic("Merkle root with asset sum hash does not match")
 		}
 	}
 	topLevelProofElements.MerkleRoot = circuit.GoComputeMerkleRootFromAccounts(topLevelProofElements.Accounts)
-	topLevelProofElements.AssetSum = circuit.SumGoAccountBalances(topLevelProofElements.Accounts)
-	topLevelProofElements.MerkleRootWithAssetSumHash = circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: topLevelProofElements.MerkleRoot, Balance: topLevelProofElements.AssetSum})
+	assetSum := circuit.SumGoAccountBalances(topLevelProofElements.Accounts)
+	topLevelProofElements.AssetSum = &assetSum
+	topLevelProofElements.MerkleRootWithAssetSumHash = circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: topLevelProofElements.MerkleRoot, Balance: *topLevelProofElements.AssetSum})
 	topLevelProof = generateProof(topLevelProofElements)
 	writeProofsToFiles([]CompletedProof{topLevelProof}, "out/public/test_top_level_proof_")
 
