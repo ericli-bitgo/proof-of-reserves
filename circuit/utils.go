@@ -39,7 +39,7 @@ func padToModBytes(value []byte, isNegative bool) (paddedValue []byte) {
 	return paddedValue
 }
 
-func goComputeMiMCHashForAccount(account GoAccount) []byte {
+func GoComputeMiMCHashForAccount(account GoAccount) []byte {
 	hasher := mimcCrypto.NewMiMC()
 	_, err := hasher.Write(goConvertBalanceToBytes(account.Balance))
 	if err != nil {
@@ -55,12 +55,42 @@ func goComputeMiMCHashForAccount(account GoAccount) []byte {
 	return hasher.Sum(nil)
 }
 
-func goComputeMerkleRootFromAccounts(accounts []GoAccount) (rootHash []byte) {
+func GoComputeMerkleRootFromAccounts(accounts []GoAccount) (rootHash []byte) {
 	hasher := mimcCrypto.NewMiMC()
 	nodes := make([][]byte, PowOfTwo(TreeDepth))
 	for i := 0; i < PowOfTwo(TreeDepth); i++ {
 		if i < len(accounts) {
-			nodes[i] = goComputeMiMCHashForAccount(accounts[i])
+			nodes[i] = GoComputeMiMCHashForAccount(accounts[i])
+		} else {
+			nodes[i] = padToModBytes([]byte{}, false)
+		}
+	}
+	for i := TreeDepth - 1; i >= 0; i-- {
+		for j := 0; j < PowOfTwo(i); j++ {
+			hasher.Reset()
+			_, err := hasher.Write(nodes[j*2])
+			if err != nil {
+				panic(err)
+			}
+			_, err = hasher.Write(nodes[j*2+1])
+			if err != nil {
+				panic(err)
+			}
+			nodes[j] = hasher.Sum(nil)
+		}
+	}
+	return nodes[0]
+}
+
+type Hash = []byte
+
+// GoComputeMerkleRootFromHashes TODO: consolidate with GoComputeMerkleRootFromAccounts
+func GoComputeMerkleRootFromHashes(hashes []Hash) (rootHash []byte) {
+	hasher := mimcCrypto.NewMiMC()
+	nodes := make([][]byte, PowOfTwo(TreeDepth))
+	for i := 0; i < PowOfTwo(TreeDepth); i++ {
+		if i < len(hashes) {
+			nodes[i] = hashes[i]
 		} else {
 			nodes[i] = padToModBytes([]byte{}, false)
 		}
@@ -137,7 +167,7 @@ func GenerateTestData(count int) (accounts []GoAccount, assetSum GoBalance, merk
 		accounts = append(accounts, GoAccount{UserId: []byte("foo"), Balance: GoBalance{Bitcoin: *big.NewInt(btcCount), Ethereum: *big.NewInt(ethCount)}})
 	}
 	goAccountBalanceSum := SumGoAccountBalances(accounts)
-	merkleRoot = goComputeMerkleRootFromAccounts(accounts)
-	merkleRootWithAssetSumHash = goComputeMiMCHashForAccount(GoAccount{UserId: merkleRoot, Balance: goAccountBalanceSum})
+	merkleRoot = GoComputeMerkleRootFromAccounts(accounts)
+	merkleRootWithAssetSumHash = GoComputeMiMCHashForAccount(GoAccount{UserId: merkleRoot, Balance: goAccountBalanceSum})
 	return accounts, goAccountBalanceSum, merkleRoot, merkleRootWithAssetSumHash
 }
