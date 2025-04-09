@@ -5,5 +5,5 @@ func main() {
 	GenerateData(batchCount)
 	Prove(batchCount)
 	proofElement := getDataFromFiles[ProofElements](1, "out/secret/test_data_")
-	Verify(batchCount, proofElement[0].accounts[0])
+	Verify(batchCount, proofElement[0].Accounts[0])
 }

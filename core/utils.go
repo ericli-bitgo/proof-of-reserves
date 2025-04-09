@@ -42,10 +42,10 @@ func readJson(filePath string, data interface{}) error {
 }
 
 type ProofElements struct {
-	accounts                   []circuit.GoAccount
-	assetSum                   circuit.GoBalance
-	merkleRoot                 []byte
-	merkleRootWithAssetSumHash []byte
+	Accounts                   []circuit.GoAccount
+	AssetSum                   circuit.GoBalance
+	MerkleRoot                 []byte
+	MerkleRootWithAssetSumHash []byte
 }
 
 type AccountLeaf = []byte
@@ -63,7 +63,7 @@ func writeTestDataToFile(batchCount int, countPerBatch int) {
 	for i := 0; i < batchCount; i++ {
 		filePath := "out/secret/test_data_" + strconv.Itoa(i) + ".json"
 		var secretData ProofElements
-		secretData.accounts, secretData.assetSum, secretData.merkleRoot, secretData.merkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch)
+		secretData.Accounts, secretData.AssetSum, secretData.MerkleRoot, secretData.MerkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch)
 		err := writeJson(filePath, secretData)
 		if err != nil {
 			panic(err)
@@ -71,7 +71,7 @@ func writeTestDataToFile(batchCount int, countPerBatch int) {
 
 		//filePath = "../out/public/test_data_" + string(rune(i)) + ".json"
 		//var publicData PublicProofElements
-		//_, _, publicData.merkleRoot, publicData.merkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch)
+		//_, _, publicData.MerkleRoot, publicData.MerkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch)
 		//err = writeJson(filePath, publicData)
 		//if err != nil {
 		//	panic(err)

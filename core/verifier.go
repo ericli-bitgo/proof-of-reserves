@@ -45,9 +45,6 @@ func verifyProofs(bottomLayerProofs []CompletedProof, topLayerProof CompletedPro
 	if !bytes.Equal(circuit.GoComputeMerkleRootFromHashes(bottomLayerHashes), topLayerProof.MerkleRoot) {
 		panic("top layer proof does not match bottom layer proofs")
 	}
-	if topLayerProof.AssetSum == nil {
-		panic("top layer proof asset sum is nil")
-	}
 	if !bytes.Equal(circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: topLayerProof.MerkleRoot, Balance: *topLayerProof.AssetSum}), topLayerProof.MerkleRootWithAssetSumHash) {
 		panic("top layer hash with asset sum does not match published asset sum")
 	}
