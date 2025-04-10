@@ -58,22 +58,19 @@ type CompletedProof struct {
 	AssetSum                   *circuit.GoBalance
 }
 
-func readDataFromFile[D ProofElements | CompletedProof | circuit.GoAccount](filePath string) (D, error) {
+func readDataFromFile[D ProofElements | CompletedProof | circuit.GoAccount](filePath string) D {
 	var data D
 	err := readJson(filePath, &data)
 	if err != nil {
-		return data, err
+		panic(err)
 	}
-	return data, nil
+	return data
 }
 
-func getDataFromFiles[D ProofElements | CompletedProof](batchCount int, prefix string) []D {
+func readDataFromFiles[D ProofElements | CompletedProof](batchCount int, prefix string) []D {
 	proofElements := make([]D, batchCount)
 	for i := 0; i < batchCount; i++ {
-		file, err := readDataFromFile[D](prefix + strconv.Itoa(i) + ".json")
-		if err != nil {
-			panic(err)
-		}
+		file := readDataFromFile[D](prefix + strconv.Itoa(i) + ".json")
 		proofElements[i] = file
 	}
 	return proofElements
