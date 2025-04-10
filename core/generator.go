@@ -31,5 +31,5 @@ func writeTestDataToFile(batchCount int, countPerBatch int) {
 }
 
 func GenerateData(batchCount int) {
-	writeTestDataToFile(batchCount, 16)
+	writeTestDataToFile(batchCount, 1024)
 }

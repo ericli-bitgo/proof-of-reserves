@@ -5,24 +5,41 @@ import (
 	"bytes"
 	"encoding/base64"
 	"github.com/consensys/gnark-crypto/ecc"
+	"github.com/consensys/gnark/backend"
 	"github.com/consensys/gnark/backend/groth16"
+	"github.com/consensys/gnark/constraint"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
 	"strconv"
 )
 
+type PartialProof struct {
+	pk groth16.ProvingKey
+	vk groth16.VerifyingKey
+	cs constraint.ConstraintSystem
+}
+
+var cachedProofs = make(map[int]PartialProof)
+
 func generateProof(elements ProofElements) CompletedProof {
-	c := &circuit.Circuit{
-		Accounts: make([]circuit.Account, len(elements.Accounts)),
+	proofLen := len(elements.Accounts)
+	if _, ok := cachedProofs[proofLen]; !ok {
+		var err error
+		c := &circuit.Circuit{
+			Accounts: make([]circuit.Account, len(elements.Accounts)),
+		}
+		cachedProof := PartialProof{}
+		cachedProof.cs, err = frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, c)
+		if err != nil {
+			panic(err)
+		}
+		cachedProof.pk, cachedProof.vk, err = groth16.Setup(cachedProof.cs)
+		if err != nil {
+			panic(err)
+		}
+		cachedProofs[proofLen] = cachedProof
 	}
-	cs, err := frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, c)
-	if err != nil {
-		panic(err)
-	}
-	pk, vk, err := groth16.Setup(cs)
-	if err != nil {
-		panic(err)
-	}
+	cachedProof := cachedProofs[proofLen]
 	var witnessInput circuit.Circuit
 	witnessInput.Accounts = circuit.ConvertGoAccountsToAccounts(elements.Accounts)
 	witnessInput.MerkleRoot = elements.MerkleRoot
@@ -35,7 +52,7 @@ func generateProof(elements ProofElements) CompletedProof {
 	if err != nil {
 		panic(err)
 	}
-	proof, err := groth16.Prove(cs, pk, witness)
+	proof, err := groth16.Prove(cachedProof.cs, cachedProof.pk, witness, backend.WithIcicleAcceleration())
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +65,7 @@ func generateProof(elements ProofElements) CompletedProof {
 	}
 	completedProof.Proof = base64.StdEncoding.EncodeToString(b1.Bytes())
 	b2 := bytes.Buffer{}
-	_, err = vk.WriteTo(&b2)
+	_, err = cachedProof.vk.WriteTo(&b2)
 	if err != nil {
 		panic(err)
 	}
