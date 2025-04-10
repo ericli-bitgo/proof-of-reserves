@@ -3,6 +3,7 @@ package main
 import (
 	"bitgo.com/proof_of_reserves/circuit"
 	"bytes"
+	"encoding/base64"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
@@ -45,13 +46,13 @@ func generateProof(elements ProofElements) CompletedProof {
 	if err != nil {
 		panic(err)
 	}
-	completedProof.Proof = b1.String()
+	completedProof.Proof = base64.StdEncoding.EncodeToString(b1.Bytes())
 	b2 := bytes.Buffer{}
 	_, err = vk.WriteTo(&b2)
 	if err != nil {
 		panic(err)
 	}
-	completedProof.VK = b2.String()
+	completedProof.VK = base64.StdEncoding.EncodeToString(b2.Bytes())
 	completedProof.AccountLeaves = computeAccountLeavesFromAccounts(elements.Accounts)
 	completedProof.MerkleRoot = circuit.GoComputeMerkleRootFromAccounts(elements.Accounts)
 	if elements.AssetSum == nil {
