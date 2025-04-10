@@ -83,7 +83,7 @@ func writeProofsToFiles(proofs []CompletedProof, prefix string) {
 
 func Prove(batchCount int) (bottomLevelProofs []CompletedProof, topLevelProof CompletedProof) {
 	// low level proofs
-	proofElements := getDataFromFiles[ProofElements](batchCount, "out/secret/test_data_")
+	proofElements := readDataFromFiles[ProofElements](batchCount, "out/secret/test_data_")
 	bottomLevelProofs = generateProofs(proofElements)
 	writeProofsToFiles(bottomLevelProofs, "out/public/test_proof_")
 

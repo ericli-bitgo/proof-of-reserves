@@ -58,44 +58,19 @@ type CompletedProof struct {
 	AssetSum                   *circuit.GoBalance
 }
 
-func writeTestDataToFile(batchCount int, countPerBatch int) {
-	for i := 0; i < batchCount; i++ {
-		filePath := "out/secret/test_data_" + strconv.Itoa(i) + ".json"
-		var secretData ProofElements
-		var assetSum circuit.GoBalance
-		secretData.Accounts, assetSum, secretData.MerkleRoot, secretData.MerkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch)
-		secretData.AssetSum = &assetSum
-		err := writeJson(filePath, secretData)
-		if err != nil {
-			panic(err)
-		}
-
-		//filePath = "../out/public/test_data_" + string(rune(i)) + ".json"
-		//var publicData PublicProofElements
-		//_, _, publicData.MerkleRoot, publicData.MerkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch)
-		//err = writeJson(filePath, publicData)
-		//if err != nil {
-		//	panic(err)
-		//}
-	}
-}
-
-func readDataFromFile[D ProofElements | CompletedProof](filePath string) (D, error) {
+func readDataFromFile[D ProofElements | CompletedProof | circuit.GoAccount](filePath string) D {
 	var data D
 	err := readJson(filePath, &data)
 	if err != nil {
-		return data, err
+		panic(err)
 	}
-	return data, nil
+	return data
 }
 
-func getDataFromFiles[D ProofElements | CompletedProof](batchCount int, prefix string) []D {
+func readDataFromFiles[D ProofElements | CompletedProof](batchCount int, prefix string) []D {
 	proofElements := make([]D, batchCount)
 	for i := 0; i < batchCount; i++ {
-		file, err := readDataFromFile[D](prefix + strconv.Itoa(i) + ".json")
-		if err != nil {
-			panic(err)
-		}
+		file := readDataFromFile[D](prefix + strconv.Itoa(i) + ".json")
 		proofElements[i] = file
 	}
 	return proofElements

@@ -86,8 +86,8 @@ func verifyInclusionInProof(accountHash circuit.Hash, bottomLayerProofs []Comple
 }
 
 func Verify(batchCount int, account circuit.GoAccount) {
-	bottomLevelProofs := getDataFromFiles[CompletedProof](batchCount, "out/public/test_proof_")
-	topLevelProof := getDataFromFiles[CompletedProof](1, "out/public/test_top_level_proof_")[0]
+	bottomLevelProofs := readDataFromFiles[CompletedProof](batchCount, "out/public/test_proof_")
+	topLevelProof := readDataFromFiles[CompletedProof](1, "out/public/test_top_level_proof_")[0]
 	verifyProofs(bottomLevelProofs, topLevelProof)
 
 	accountHash := circuit.GoComputeMiMCHashForAccount(account)

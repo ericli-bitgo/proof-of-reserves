@@ -1,10 +1,12 @@
 package main
 
+import "bitgo.com/proof_of_reserves/circuit"
+
 func main() {
 	batchCount := 3
 	GenerateData(batchCount)
 	Prove(batchCount)
-	proofElement := getDataFromFiles[ProofElements](1, "out/secret/test_data_")
-	Verify(batchCount, proofElement[0].Accounts[0])
+	account := readDataFromFile[circuit.GoAccount]("out/secret/test_account.json")
+	Verify(batchCount, account)
 	print("Proof succeeded!")
 }
