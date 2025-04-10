@@ -19,9 +19,8 @@ type Account struct {
 }
 
 type Circuit struct {
-	Accounts []Account `gnark:""`
-	AssetSum Balance   `gnark:""`
-	// right now we don't actually merkle it, we just sequentially hash it
+	Accounts                   []Account         `gnark:""`
+	AssetSum                   Balance           `gnark:""`
 	MerkleRoot                 frontend.Variable `gnark:",public"`
 	MerkleRootWithAssetSumHash frontend.Variable `gnark:",public"`
 }
@@ -62,20 +61,6 @@ func hashAccount(hasher mimc.MiMC, account Account) (hash frontend.Variable) {
 	return hasher.Sum()
 }
 
-func computeMerkleRoot(api frontend.API, hasher mimc.MiMC, node frontend.Variable, proofs [TreeDepth]frontend.Variable, directions []frontend.Variable) (rootHash frontend.Variable) {
-	for i := 0; i < len(proofs); i++ {
-		proof := proofs[i]
-		direction := directions[i]
-		api.AssertIsBoolean(direction)
-		// maybe swapped
-		left, right := api.Select(direction, proof, node), api.Select(direction, node, proof)
-		hasher.Reset()
-		hasher.Write(left, right)
-		node = hasher.Sum()
-	}
-	return node
-}
-
 func computeMerkleRootFromAccounts(api frontend.API, hasher mimc.MiMC, accounts []Account) (rootHash frontend.Variable) {
 	nodes := make([]frontend.Variable, PowOfTwo(TreeDepth))
 	for i := 0; i < PowOfTwo(TreeDepth); i++ {
@@ -93,10 +78,6 @@ func computeMerkleRootFromAccounts(api frontend.API, hasher mimc.MiMC, accounts 
 		}
 	}
 	return nodes[0]
-}
-
-func generateDirectionsFromIndex(api frontend.API, index int) (directions []frontend.Variable) {
-	return api.ToBinary(index, TreeDepth)
 }
 
 func assertBalancesAreEqual(api frontend.API, a, b Balance) {
