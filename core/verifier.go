@@ -3,6 +3,7 @@ package main
 import (
 	"bitgo.com/proof_of_reserves/circuit"
 	"bytes"
+	"encoding/base64"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
@@ -15,14 +16,22 @@ func verifyProof(proof CompletedProof) bool {
 	publicCircuit.MerkleRootWithAssetSumHash = proof.MerkleRootWithAssetSumHash
 	publicWitness, err := frontend.NewWitness(&publicCircuit, ecc.BN254.ScalarField(), frontend.PublicOnly())
 	grothProof := groth16.NewProof(ecc.BN254)
-	b1 := bytes.NewBufferString(proof.Proof)
-	_, err = grothProof.ReadFrom(b1)
+	b1, err := base64.StdEncoding.DecodeString(proof.Proof)
+	if err != nil {
+		panic(err)
+	}
+	buf1 := bytes.NewBuffer(b1)
+	_, err = grothProof.ReadFrom(buf1)
 	if err != nil {
 		panic(err)
 	}
 	grothVK := groth16.NewVerifyingKey(ecc.BN254)
-	b2 := bytes.NewBufferString(proof.VK)
-	_, err = grothVK.ReadFrom(b2)
+	b2, err := base64.StdEncoding.DecodeString(proof.VK)
+	if err != nil {
+		panic(err)
+	}
+	buf2 := bytes.NewBuffer(b2)
+	_, err = grothVK.ReadFrom(buf2)
 	if err != nil {
 		panic(err)
 	}
@@ -76,9 +85,9 @@ func verifyInclusionInProof(accountHash circuit.Hash, bottomLayerProofs []Comple
 	panic("account not found in any proof")
 }
 
-func Verify(batchCount int, account circuit.GoAccount, bottomLevelProofs []CompletedProof, topLevelProof CompletedProof) {
-	//bottomLevelProofs := getDataFromFiles[CompletedProof](batchCount, "out/public/test_proof_")
-	//topLevelProof := getDataFromFiles[CompletedProof](1, "out/public/test_top_level_proof_")[0]
+func Verify(batchCount int, account circuit.GoAccount) {
+	bottomLevelProofs := getDataFromFiles[CompletedProof](batchCount, "out/public/test_proof_")
+	topLevelProof := getDataFromFiles[CompletedProof](1, "out/public/test_top_level_proof_")[0]
 	verifyProofs(bottomLevelProofs, topLevelProof)
 
 	accountHash := circuit.GoComputeMiMCHashForAccount(account)
