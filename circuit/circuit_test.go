@@ -22,7 +22,7 @@ func TestCircuitWorks(t *testing.T) {
 	assert := test.NewAssert(t)
 
 	var c Circuit
-	goAccounts, goAssetSum, goMerkleRoot, goMerkleRootWithHash := GenerateTestData(count) // Generate test data for 128 accounts
+	goAccounts, goAssetSum, goMerkleRoot, goMerkleRootWithHash := GenerateTestData(count, 0) // Generate test data for 128 accounts
 	c.Accounts = ConvertGoAccountsToAccounts(goAccounts)
 	c.AssetSum = ConvertGoBalanceToBalance(goAssetSum)
 	c.MerkleRoot = goMerkleRoot
@@ -35,7 +35,7 @@ func TestCircuitDoesNotAcceptNegativeAccounts(t *testing.T) {
 	assert := test.NewAssert(t)
 
 	var c Circuit
-	goAccounts, _, _, _ := GenerateTestData(count)
+	goAccounts, _, _, _ := GenerateTestData(count, 0)
 	goAccounts[0].Balance.Bitcoin = *big.NewInt(-1)
 	c.Accounts = ConvertGoAccountsToAccounts(goAccounts)
 	goAssetSum := SumGoAccountBalancesIncludingNegatives(goAccounts)
@@ -51,7 +51,7 @@ func TestCircuitDoesNotAcceptAccountsWithOverflow(t *testing.T) {
 	assert := test.NewAssert(t)
 
 	var c Circuit
-	goAccounts, _, _, _ := GenerateTestData(count)
+	goAccounts, _, _, _ := GenerateTestData(count, 0)
 	amt := make([]byte, 9) // this is 72 bits, overflowing our rangecheck
 	for b := range amt {
 		amt[b] = 0xFF
@@ -71,7 +71,7 @@ func TestCircuitDoesNotAcceptInvalidMerkleRoot(t *testing.T) {
 	assert := test.NewAssert(t)
 
 	var c Circuit
-	goAccounts, goAssetSum, _, goMerkleRootWithHash := GenerateTestData(count) // Generate test data for 128 accounts
+	goAccounts, goAssetSum, _, goMerkleRootWithHash := GenerateTestData(count, 0) // Generate test data for 128 accounts
 	c.Accounts = ConvertGoAccountsToAccounts(goAccounts)
 	c.AssetSum = ConvertGoBalanceToBalance(goAssetSum)
 	c.MerkleRoot = 123
@@ -84,7 +84,7 @@ func TestCircuitDoesNotAcceptInvalidMerkleRootWithSumHash(t *testing.T) {
 	assert := test.NewAssert(t)
 
 	var c Circuit
-	goAccounts, goAssetSum, merkleRoot, _ := GenerateTestData(count) // Generate test data for 128 accounts
+	goAccounts, goAssetSum, merkleRoot, _ := GenerateTestData(count, 0) // Generate test data for 128 accounts
 	c.Accounts = ConvertGoAccountsToAccounts(goAccounts)
 	c.AssetSum = ConvertGoBalanceToBalance(goAssetSum)
 	c.MerkleRoot = merkleRoot
