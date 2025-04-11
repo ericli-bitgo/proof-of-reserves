@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bitgo.com/proof_of_reserves/circuit"
@@ -24,12 +24,12 @@ func writeTestDataToFile(batchCount int, countPerBatch int) {
 	if lastAccount == nil {
 		panic("lastAccount is nil")
 	}
-	err := writeJson("out/secret/test_account.json", lastAccount)
+	err := writeJson("out/user/test_account.json", lastAccount)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func GenerateData(batchCount int) {
-	writeTestDataToFile(batchCount, 16)
+func GenerateData(batchCount int, countPerBatch int) {
+	writeTestDataToFile(batchCount, countPerBatch)
 }

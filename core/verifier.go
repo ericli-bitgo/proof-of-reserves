@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bitgo.com/proof_of_reserves/circuit"
@@ -104,10 +104,10 @@ func verifyInclusionInProof(accountHash circuit.Hash, bottomLayerProofs []Comple
 }
 
 func Verify(batchCount int, account circuit.GoAccount) {
-	bottomLevelProofs := readDataFromFiles[CompletedProof](batchCount, "out/public/test_proof_")
+	bottomLevelProofs := ReadDataFromFiles[CompletedProof](batchCount, "out/public/test_proof_")
 	// the number of mid level proofs is ceil(batchCount / 1024)
-	midLevelProofs := readDataFromFiles[CompletedProof]((batchCount+1023)/1024, "out/public/test_mid_level_proof_")
-	topLevelProof := readDataFromFiles[CompletedProof](1, "out/public/test_top_level_proof_")[0]
+	midLevelProofs := ReadDataFromFiles[CompletedProof]((batchCount+1023)/1024, "out/public/test_mid_level_proof_")
+	topLevelProof := ReadDataFromFiles[CompletedProof](1, "out/public/test_top_level_proof_")[0]
 	verifyProofs(bottomLevelProofs, midLevelProofs, topLevelProof)
 
 	accountHash := circuit.GoComputeMiMCHashForAccount(account)
