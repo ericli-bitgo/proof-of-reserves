@@ -88,8 +88,11 @@ func generateProofs(proofElements []ProofElements) []CompletedProof {
 	return completedProofs
 }
 
-func writeProofsToFiles(proofs []CompletedProof, prefix string) {
+func writeProofsToFiles(proofs []CompletedProof, prefix string, saveAssetSum bool) {
 	for i, proof := range proofs {
+		if !saveAssetSum {
+			proof.AssetSum = nil
+		}
 		filePath := prefix + strconv.Itoa(i) + ".json"
 		err := writeJson(filePath, proof)
 		if err != nil {
@@ -102,7 +105,7 @@ func Prove(batchCount int) (bottomLevelProofs []CompletedProof, topLevelProof Co
 	// low level proofs
 	proofElements := readDataFromFiles[ProofElements](batchCount, "out/secret/test_data_")
 	bottomLevelProofs = generateProofs(proofElements)
-	writeProofsToFiles(bottomLevelProofs, "out/public/test_proof_")
+	writeProofsToFiles(bottomLevelProofs, "out/public/test_proof_", false)
 
 	// top level proof
 	var topLevelProofElements ProofElements
@@ -122,7 +125,7 @@ func Prove(batchCount int) (bottomLevelProofs []CompletedProof, topLevelProof Co
 	topLevelProofElements.AssetSum = &assetSum
 	topLevelProofElements.MerkleRootWithAssetSumHash = circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: topLevelProofElements.MerkleRoot, Balance: *topLevelProofElements.AssetSum})
 	topLevelProof = generateProof(topLevelProofElements)
-	writeProofsToFiles([]CompletedProof{topLevelProof}, "out/public/test_top_level_proof_")
+	writeProofsToFiles([]CompletedProof{topLevelProof}, "out/public/test_top_level_proof_", true)
 
 	return bottomLevelProofs, topLevelProof
 }
