@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bitgo.com/proof_of_reserves/circuit"
@@ -123,7 +123,7 @@ func generateNextLevelProofs(currentLevelProof []CompletedProof) CompletedProof 
 
 func Prove(batchCount int) (bottomLevelProofs []CompletedProof, topLevelProof CompletedProof) {
 	// bottom level proofs
-	proofElements := readDataFromFiles[ProofElements](batchCount, "out/secret/test_data_")
+	proofElements := ReadDataFromFiles[ProofElements](batchCount, "out/secret/test_data_")
 	bottomLevelProofs = generateProofs(proofElements)
 	writeProofsToFiles(bottomLevelProofs, "out/public/test_proof_", false)
 

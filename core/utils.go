@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bitgo.com/proof_of_reserves/circuit"
@@ -58,7 +58,7 @@ type CompletedProof struct {
 	AssetSum                   *circuit.GoBalance
 }
 
-func readDataFromFile[D ProofElements | CompletedProof | circuit.GoAccount](filePath string) D {
+func ReadDataFromFile[D ProofElements | CompletedProof | circuit.GoAccount](filePath string) D {
 	var data D
 	err := readJson(filePath, &data)
 	if err != nil {
@@ -67,10 +67,10 @@ func readDataFromFile[D ProofElements | CompletedProof | circuit.GoAccount](file
 	return data
 }
 
-func readDataFromFiles[D ProofElements | CompletedProof](batchCount int, prefix string) []D {
+func ReadDataFromFiles[D ProofElements | CompletedProof](batchCount int, prefix string) []D {
 	proofElements := make([]D, batchCount)
 	for i := 0; i < batchCount; i++ {
-		file := readDataFromFile[D](prefix + strconv.Itoa(i) + ".json")
+		file := ReadDataFromFile[D](prefix + strconv.Itoa(i) + ".json")
 		proofElements[i] = file
 	}
 	return proofElements
