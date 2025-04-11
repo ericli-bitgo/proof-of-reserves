@@ -85,6 +85,10 @@ func computeAccountLeavesFromAccounts(accounts []circuit.GoAccount) (accountLeav
 }
 
 func batchProofs(proofs []CompletedProof, batchSize int) [][]CompletedProof {
+	if batchSize <= 0 {
+		panic("Batch size must be greater than 0")
+	}
+
 	batches := make([][]CompletedProof, 0)
 	for i := 0; i < len(proofs); i += batchSize {
 		end := i + batchSize
