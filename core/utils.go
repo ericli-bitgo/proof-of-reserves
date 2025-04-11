@@ -83,3 +83,15 @@ func computeAccountLeavesFromAccounts(accounts []circuit.GoAccount) (accountLeav
 	}
 	return accountLeaves
 }
+
+func batchProofs(proofs []CompletedProof, batchSize int) [][]CompletedProof {
+	batches := make([][]CompletedProof, 0)
+	for i := 0; i < len(proofs); i += batchSize {
+		end := i + batchSize
+		if end > len(proofs) {
+			end = len(proofs)
+		}
+		batches = append(batches, proofs[i:end])
+	}
+	return batches
+}

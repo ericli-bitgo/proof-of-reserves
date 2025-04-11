@@ -47,25 +47,43 @@ func verifyProof(proof CompletedProof) bool {
 	return true
 }
 
-func verifyProofs(bottomLayerProofs []CompletedProof, topLayerProof CompletedProof) {
+func verifyLowerLayerProofsLeadToUpperLayerProof(lowerLayerProofs []CompletedProof, upperLayerProof CompletedProof) {
+	bottomLayerHashes := make([]circuit.Hash, len(lowerLayerProofs))
+	for i, proof := range lowerLayerProofs {
+		bottomLayerHashes[i] = proof.MerkleRootWithAssetSumHash
+	}
+	if !bytes.Equal(circuit.GoComputeMerkleRootFromHashes(bottomLayerHashes), upperLayerProof.MerkleRoot) {
+		panic("upper layer proof does not match lower layer proofs")
+	}
+}
+
+func verifyProofs(bottomLayerProofs []CompletedProof, midLayerProofs []CompletedProof, topLayerProof CompletedProof) {
 	// first, verify the proofs are valid
 	for _, proof := range bottomLayerProofs {
 		if !verifyProof(proof) {
 			panic("bottom layer proof verification failed")
 		}
 	}
+	for _, proof := range midLayerProofs {
+		if !verifyProof(proof) {
+			panic("mid layer proof verification failed")
+		}
+	}
 	if !verifyProof(topLayerProof) {
 		panic("top layer proof verification failed")
 	}
 
-	// next, verify that the bottom layer proofs lead to the top layer proof
-	bottomLayerHashes := make([]circuit.Hash, len(bottomLayerProofs))
-	for i, proof := range bottomLayerProofs {
-		bottomLayerHashes[i] = proof.MerkleRootWithAssetSumHash
+	// next, verify that the bottom layer proofs lead to the mid layer proofs
+	bottomLevelProofsBatched := batchProofs(bottomLayerProofs, 1024)
+	if len(bottomLevelProofsBatched) != len(midLayerProofs) {
+		panic("bottom layer proofs and mid layer proofs do not match")
 	}
-	if !bytes.Equal(circuit.GoComputeMerkleRootFromHashes(bottomLayerHashes), topLayerProof.MerkleRoot) {
-		panic("top layer proof does not match bottom layer proofs")
+	for i, batch := range bottomLevelProofsBatched {
+		verifyLowerLayerProofsLeadToUpperLayerProof(batch, midLayerProofs[i])
 	}
+
+	// finally, verify that the mid layer proofs lead to the top layer proof
+	verifyLowerLayerProofsLeadToUpperLayerProof(midLayerProofs, topLayerProof)
 	if topLayerProof.AssetSum == nil {
 		panic("top layer proof asset sum is nil")
 	}
@@ -87,8 +105,10 @@ func verifyInclusionInProof(accountHash circuit.Hash, bottomLayerProofs []Comple
 
 func Verify(batchCount int, account circuit.GoAccount) {
 	bottomLevelProofs := readDataFromFiles[CompletedProof](batchCount, "out/public/test_proof_")
+	// the number of mid level proofs is ceil(batchCount / 1024)
+	midLevelProofs := readDataFromFiles[CompletedProof]((batchCount+1023)/1024, "out/public/test_mid_level_proof_")
 	topLevelProof := readDataFromFiles[CompletedProof](1, "out/public/test_top_level_proof_")[0]
-	verifyProofs(bottomLevelProofs, topLevelProof)
+	verifyProofs(bottomLevelProofs, midLevelProofs, topLevelProof)
 
 	accountHash := circuit.GoComputeMiMCHashForAccount(account)
 	verifyInclusionInProof(accountHash, bottomLevelProofs)
