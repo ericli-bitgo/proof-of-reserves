@@ -11,7 +11,7 @@ func writeTestDataToFile(batchCount int, countPerBatch int) {
 		filePath := "out/secret/test_data_" + strconv.Itoa(i) + ".json"
 		var secretData ProofElements
 		var assetSum circuit.GoBalance
-		secretData.Accounts, assetSum, secretData.MerkleRoot, secretData.MerkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch)
+		secretData.Accounts, assetSum, secretData.MerkleRoot, secretData.MerkleRootWithAssetSumHash = circuit.GenerateTestData(countPerBatch, i+11)
 		secretData.AssetSum = &assetSum
 		err := writeJson(filePath, secretData)
 		if err != nil {
@@ -31,5 +31,5 @@ func writeTestDataToFile(batchCount int, countPerBatch int) {
 }
 
 func GenerateData(batchCount int) {
-	writeTestDataToFile(batchCount, 1024)
+	writeTestDataToFile(batchCount, 16)
 }

@@ -7,7 +7,11 @@ This system is implemented using Gnark v0.12.0.
 
 ## Architecture
 
-Assuming there are 2 layers, this can be extended to arbitrary layers to preserve O(log n) verification time.
+This can be extended to arbitrary layers to preserve O(log n) verification time.
+
+The explanations assume a 2 layer implementation. 
+
+However, the actual implementation is currently 3 layers, leading to an upper limit of 1 billion accounts. This does not change the guarantees.
 
 ### Bottom layer: 
 

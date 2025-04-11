@@ -161,9 +161,10 @@ func SumGoAccountBalances(accounts []GoAccount) GoBalance {
 	return assetSum
 }
 
-func GenerateTestData(count int) (accounts []GoAccount, assetSum GoBalance, merkleRoot []byte, merkleRootWithAssetSumHash []byte) {
+func GenerateTestData(count int, seed int) (accounts []GoAccount, assetSum GoBalance, merkleRoot []byte, merkleRootWithAssetSumHash []byte) {
 	for i := 0; i < count; i++ {
-		btcCount, ethCount := int64(i+45*i+39), int64(i*2+i+1001)
+		iWithSeed := (i + seed) * (seed + 1)
+		btcCount, ethCount := int64(iWithSeed+45*iWithSeed+39), int64(iWithSeed*2+iWithSeed+1001)
 		accounts = append(accounts, GoAccount{UserId: []byte("foo"), Balance: GoBalance{Bitcoin: *big.NewInt(btcCount), Ethereum: *big.NewInt(ethCount)}})
 	}
 	goAccountBalanceSum := SumGoAccountBalances(accounts)
