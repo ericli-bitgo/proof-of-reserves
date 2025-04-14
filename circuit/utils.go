@@ -172,3 +172,7 @@ func GenerateTestData(count int, seed int) (accounts []GoAccount, assetSum GoBal
 	merkleRootWithAssetSumHash = GoComputeMiMCHashForAccount(GoAccount{UserId: merkleRoot, Balance: goAccountBalanceSum})
 	return accounts, goAccountBalanceSum, merkleRoot, merkleRootWithAssetSumHash
 }
+
+func (GoBalance *GoBalance) Equals(other GoBalance) bool {
+	return GoBalance.Bitcoin.Cmp(&other.Bitcoin) == 0 && GoBalance.Ethereum.Cmp(&other.Ethereum) == 0
+}
