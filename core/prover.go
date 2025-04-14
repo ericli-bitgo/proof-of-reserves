@@ -22,6 +22,20 @@ type PartialProof struct {
 var cachedProofs = make(map[int]PartialProof)
 
 func generateProof(elements ProofElements) CompletedProof {
+	if elements.AssetSum == nil {
+		panic("AssetSum is nil")
+	}
+	if elements.MerkleRoot == nil {
+		elements.MerkleRoot = circuit.GoComputeMerkleRootFromAccounts(elements.Accounts)
+	}
+	if elements.MerkleRootWithAssetSumHash == nil {
+		elements.MerkleRootWithAssetSumHash = circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: elements.MerkleRoot, Balance: *elements.AssetSum})
+	}
+	actualBalances := circuit.SumGoAccountBalances(elements.Accounts)
+	if !actualBalances.Equals(*elements.AssetSum) {
+		panic("Asset sum does not match")
+	}
+
 	proofLen := len(elements.Accounts)
 	if _, ok := cachedProofs[proofLen]; !ok {
 		var err error
