@@ -45,7 +45,7 @@ var userVerifyCmd = &cobra.Command{
 		bottomLevelProof := core.ReadDataFromFile[core.CompletedProof](args[1])
 		midLevelProof := core.ReadDataFromFile[core.CompletedProof](args[2])
 		topLevelProof := core.ReadDataFromFile[core.CompletedProof](args[3])
-		core.VerifyProofPath(userAccount, bottomLevelProof, midLevelProof, topLevelProof)
+		core.VerifyProofPath(circuit.GoComputeMiMCHashForAccount(userAccount), bottomLevelProof, midLevelProof, topLevelProof)
 		println("Verification path succeeded!")
 	},
 }

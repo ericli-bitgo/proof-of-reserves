@@ -118,7 +118,7 @@ func Verify(batchCount int, account circuit.GoAccount) {
 	verifyInclusionInProof(accountHash, bottomLevelProofs)
 }
 
-func VerifyProofPath(account circuit.GoAccount, bottomLayerProof CompletedProof, midLayerProof CompletedProof, topLayerProof CompletedProof) {
+func VerifyProofPath(accountHash circuit.Hash, bottomLayerProof CompletedProof, midLayerProof CompletedProof, topLayerProof CompletedProof) {
 	if !verifyProof(bottomLayerProof) {
 		panic("bottom layer proof verification failed")
 	}
@@ -128,10 +128,9 @@ func VerifyProofPath(account circuit.GoAccount, bottomLayerProof CompletedProof,
 	if !verifyProof(topLayerProof) {
 		panic("top layer proof verification failed")
 	}
-
-	accountHash := circuit.GoComputeMiMCHashForAccount(account)
-
 	verifyInclusionInProof(accountHash, []CompletedProof{bottomLayerProof})
 	verifyInclusionInProof(bottomLayerProof.MerkleRootWithAssetSumHash, []CompletedProof{midLayerProof})
 	verifyInclusionInProof(midLayerProof.MerkleRootWithAssetSumHash, []CompletedProof{topLayerProof})
+
+	verifyTopLayerProofMatchesAssetSum(topLayerProof)
 }
