@@ -41,7 +41,7 @@ there were no accounts with overflowing balances or negative balances included i
 
 #### Prove
 
-This generates proofs for every account in `out/secret` and stores the proofs in `out/public`. 
+This generates proofs for accounts in the files `data_0.json...data_(i-1).json` in `out/secret` and stores the proofs in `out/public`. 
 Each input data file can contain a maximum of 1024 accounts.
 
 ```bash
