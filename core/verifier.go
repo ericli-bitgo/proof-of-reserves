@@ -57,6 +57,15 @@ func verifyLowerLayerProofsLeadToUpperLayerProof(lowerLayerProofs []CompletedPro
 	}
 }
 
+func verifyTopLayerProofMatchesAssetSum(topLayerProof CompletedProof) {
+	if topLayerProof.AssetSum == nil {
+		panic("top layer proof asset sum is nil")
+	}
+	if !bytes.Equal(circuit.GoComputeMiMCHashForAccount(ConvertProofToGoAccount(topLayerProof)), topLayerProof.MerkleRootWithAssetSumHash) {
+		panic("top layer hash with asset sum does not match published asset sum")
+	}
+}
+
 func verifyProofs(bottomLayerProofs []CompletedProof, midLayerProofs []CompletedProof, topLayerProof CompletedProof) {
 	// first, verify the proofs are valid
 	for _, proof := range bottomLayerProofs {
@@ -84,12 +93,7 @@ func verifyProofs(bottomLayerProofs []CompletedProof, midLayerProofs []Completed
 
 	// finally, verify that the mid layer proofs lead to the top layer proof
 	verifyLowerLayerProofsLeadToUpperLayerProof(midLayerProofs, topLayerProof)
-	if topLayerProof.AssetSum == nil {
-		panic("top layer proof asset sum is nil")
-	}
-	if !bytes.Equal(circuit.GoComputeMiMCHashForAccount(circuit.GoAccount{UserId: topLayerProof.MerkleRoot, Balance: *topLayerProof.AssetSum}), topLayerProof.MerkleRootWithAssetSumHash) {
-		panic("top layer hash with asset sum does not match published asset sum")
-	}
+	verifyTopLayerProofMatchesAssetSum(topLayerProof)
 }
 
 func verifyInclusionInProof(accountHash circuit.Hash, bottomLayerProofs []CompletedProof) {
@@ -112,4 +116,22 @@ func Verify(batchCount int, account circuit.GoAccount) {
 
 	accountHash := circuit.GoComputeMiMCHashForAccount(account)
 	verifyInclusionInProof(accountHash, bottomLevelProofs)
+}
+
+func VerifyProofPath(account circuit.GoAccount, bottomLayerProof CompletedProof, midLayerProof CompletedProof, topLayerProof CompletedProof) {
+	if !verifyProof(bottomLayerProof) {
+		panic("bottom layer proof verification failed")
+	}
+	if !verifyProof(midLayerProof) {
+		panic("mid layer proof verification failed")
+	}
+	if !verifyProof(topLayerProof) {
+		panic("top layer proof verification failed")
+	}
+
+	accountHash := circuit.GoComputeMiMCHashForAccount(account)
+
+	verifyInclusionInProof(accountHash, []CompletedProof{bottomLayerProof})
+	verifyInclusionInProof(bottomLayerProof.MerkleRootWithAssetSumHash, []CompletedProof{midLayerProof})
+	verifyInclusionInProof(midLayerProof.MerkleRootWithAssetSumHash, []CompletedProof{topLayerProof})
 }

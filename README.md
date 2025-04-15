@@ -5,6 +5,67 @@
 This is a multi-levelled proof of reserves implementation that enables O(log n) time verification of proofs. 
 This system is implemented using Gnark v0.12.0.
 
+## Usage
+
+Build the binary using
+
+```bash
+make build
+```
+
+Then run the binary using
+
+```bash
+./bgproof --help
+```
+
+### Commands:
+
+#### Userverify
+
+Using the proof files provided by BitGo, run the following command:
+
+```bash
+./bgproof userverify path/to/useraccount.json path/to/bottomlevelproof.json path/to/midlevelproof.json path/to/toplevelproof.json
+```
+
+This is intended to be the main verification path, requiring O(log n) time to verify proof of solvency. This verification path verifies that
+1) Your account was included in the bottom level proof you were provided
+2) The bottom level proof you were provided was included in the mid level proof you were provided
+3) The mid level proof you were provided was included in the top level proof you were provided
+4) The top level proof you were provided matches the asset sum you were provided
+5) The chain of proofs is valid (i.e., your account was included in the asset sum for the low level proof, 
+the low level proof was included in the asset sum for the mid level proof, 
+the mid level proof was included in the asset sum for the high level proof, and
+there were no accounts with overflowing balances or negative balances included in any of the asset sums.
+
+#### Prove
+
+This generates proofs for every account in `out/secret` and stores the proofs in `out/public`. 
+Each input data file can contain a maximum of 1024 accounts.
+
+```bash
+bgproof prove [number of input data batches]
+```
+
+#### Verify
+
+This is a complete verification, requiring every proof file and one account in `out/user/test_account.json`. 
+This can be useful for checking that the proofs were correctly generated. Please note that these filenames are fixed,
+and that the number of mid and top level proofs are determined by the number of lower level proofs.
+
+```bash
+bgproof verify [number of input lower level proofs]
+```
+
+#### Generate
+
+This generates dummy data purely for testing and puts it in `out/secret`. Running this can be helpful for getting an idea of what the input files look like.
+
+```bash
+./bgproof generate [number of data batches to generate] [accounts to include per batch]
+```
+
 ## Architecture
 
 This can be extended to arbitrary layers to preserve O(log n) verification time.

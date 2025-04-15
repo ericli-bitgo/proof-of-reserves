@@ -99,3 +99,13 @@ func batchProofs(proofs []CompletedProof, batchSize int) [][]CompletedProof {
 	}
 	return batches
 }
+
+func ConvertProofToGoAccount(proof CompletedProof) circuit.GoAccount {
+	if proof.AssetSum == nil {
+		panic("AssetSum is nil, cannot convert to GoAccount")
+	}
+	return circuit.GoAccount{
+		UserId:  proof.MerkleRoot,
+		Balance: *proof.AssetSum,
+	}
+}
