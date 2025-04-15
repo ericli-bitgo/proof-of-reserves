@@ -12,6 +12,10 @@ var proofLower1 = ReadDataFromFile[CompletedProof]("testdata/test_proof_1.json")
 var proofMid = ReadDataFromFile[CompletedProof]("testdata/test_mid_level_proof_0.json")
 var proofTop = ReadDataFromFile[CompletedProof]("testdata/test_top_level_proof_0.json")
 
+var altProofLower0 = ReadDataFromFile[CompletedProof]("testdata/test_alt_proof_0.json")
+var altProofMid = ReadDataFromFile[CompletedProof]("testdata/test_alt_mid_level_proof_0.json")
+var altProofTop = ReadDataFromFile[CompletedProof]("testdata/test_alt_top_level_proof_0.json")
+
 func TestVerifyInclusionInProof(t *testing.T) {
 	assert := test.NewAssert(t)
 
@@ -107,4 +111,26 @@ func TestVerifyProofsFailsWhenBottomLayerProofsMismatch(t *testing.T) {
 
 func TestVerifyProofsPasses(t *testing.T) {
 	verifyProofs([]CompletedProof{proofLower0, proofLower1}, []CompletedProof{proofMid}, proofTop)
+}
+
+func TestVerifyProofPath(t *testing.T) {
+	assert := test.NewAssert(t)
+
+	// Valid proofs pass
+	VerifyProofPath(proofLower0.AccountLeaves[0], proofLower0, proofMid, proofTop)
+	VerifyProofPath(proofLower1.AccountLeaves[len(proofLower1.AccountLeaves)-1], proofLower1, proofMid, proofTop)
+	VerifyProofPath(altProofLower0.AccountLeaves[0], altProofLower0, altProofMid, altProofTop)
+
+	// Test with invalid proofs
+	assert.Panics(func() { VerifyProofPath(proofLower0.AccountLeaves[0], proofLower1, proofMid, proofTop) }, "should panic when account is not included")
+	assert.Panics(func() { VerifyProofPath(proofLower0.AccountLeaves[0], proofLower0, proofMid, CompletedProof{}) }, "should panic when proofs are incomplete")
+
+	incorrectProofTop := proofTop
+	incorrectProofTop.AssetSum = &circuit.GoBalance{
+		Bitcoin:  *big.NewInt(123),
+		Ethereum: *big.NewInt(456),
+	}
+	assert.Panics(func() { VerifyProofPath(proofLower0.AccountLeaves[0], proofLower0, proofMid, incorrectProofTop) }, "should panic when asset sum is incorrect")
+	assert.Panics(func() { VerifyProofPath(proofLower0.AccountLeaves[0], proofLower0, proofMid, altProofTop) }, "should panic when mid proof does not link to top proof")
+	assert.Panics(func() { VerifyProofPath(proofLower0.AccountLeaves[0], proofLower0, altProofMid, proofTop) }, "should panic when bottom proof does not link to mid proof")
 }
