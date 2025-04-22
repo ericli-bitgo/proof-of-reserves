@@ -1,5 +1,7 @@
 # Proof of Reserves
 
+**This repo has been archived. Go to https://github.com/BitGo/proof-of-solvency for the most recent version of this tool.**
+
 ## Overview
 
 This is a multi-levelled proof of reserves implementation that enables O(log n) time verification of proofs. 
